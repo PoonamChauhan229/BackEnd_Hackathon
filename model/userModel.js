@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken")
 
 const userSchema = new mongoose.Schema({
     name:{type:String,required:true},
-    lastname:{type:String,required:true},
     email:{type:String,required:true},
     password:{type:String}
 },{
@@ -16,31 +15,6 @@ userSchema.methods.generateAuthToken = async function(req,res){
     console.log(token)
     return token
 }
-
-userSchema.virtual('movieRel',{
-    ref:"Movie",
-    localField:"_id",
-    foreignField:"owner"
-})
-
-userSchema.virtual('enquiryRel',{
-    ref:"Enquiry",
-    localField:"_id",
-    foreignField:"owner"
-})
-
-userSchema.virtual('orderRel',{
-    ref:"Order",
-    localField:"_id",
-    foreignField:"owner"
-})
-
-userSchema.virtual('cartRel',{
-    ref:"Cart",
-    localField:"_id",
-    foreignField:"owner"
-}
-)
 
 const User = mongoose.model("User",userSchema)
 

@@ -2,46 +2,54 @@ const User = require('../model/userModel')
 const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcryptjs')
-const sendWelcomeEmail = require('../emails/sendWelcomeEmail')
+const jwt = require('jsonwebtoken')
 const {auth} = require('../middleware/auth')
+const sendResetEmail=require('../emails/sendResetPasswordEmail')
+
 
 //POST REQUEST
-router.post('/signup',async(req,res)=>{
-    //try{
-    //checking if the user is already registered
-    let user = await User.findOne({
-              $or:[
-            {email:req.body.email},
-            {phone_number:req.body.phone_number}
-        ]
-    })
-    console.log(user)
-    if(user){console.log("User is found", req.body.email)
-        return res.send("User Already Exists")
+router.post('/signup', async (req, res) => {
+    try {
+        // Checking if the user is already registered
+        let user = await User.findOne( { email: req.body.email } );
+
+        // If user already exists
+        if (user) {
+            console.log("User is found", req.body.email);
+            return res.status(400).json({ message: "User Already Exists" });
+        }
+
+        // Password hashing
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+        // Creating new user data
+        const userData = new User({
+            ...req.body, // Copying req.body data
+            password: hashedPassword // Setting the hashed password
+        });
+
+        // Saving user data to database
+        await userData.save();
+
+        // Sending response after user creation
+        res.status(201).json({
+            message: "Signup successful. Please log in.",
+            user: {
+                name: userData.name,
+                email: userData.email
+            }
+        });
+        
+    } catch (error) {
+        console.error("Error during signup:", error);
+        res.status(500).json({ message: "Some internal error occurred" });
     }
-    //password hashing
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(req.body.password,salt)
-    const userData = new User({
-        ...req.body, //making the copy of req.body
-        password:hashedPassword // this one I need to update
-    })
-    await userData.save()
-    res.send(userData)
-    if(userData){
-    sendWelcomeEmail(req.body.email,req.body.name)
-    }else{
-        res.send(
-        {message:"Please check again"}
-        )
-    }
-//     }catch(e){
-//     res.send("Some Internal Error Occurred")
-// }
-})
+});
+
 
 // Signin
-router.post('/signin', async(req,res)=>{
+router.post('/login', async(req,res)=>{
 // res.send(req.body)
 try{
     // Checking Email address
@@ -75,6 +83,51 @@ try{
     res.status(500).send({message:"Some Internal Error"})
 }
 })
+
+
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    console.log(user)
+
+    if (!user) return res.status(404).send({ message: "User not found" });
+
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "15m",
+    });
+
+    const resetLink = `http://localhost:5173/reset-password?token=${token}`; // adjust frontend URL
+
+    await sendResetEmail(email, resetLink);
+    res.send({ message: "Reset link sent to your email" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "Error sending email" });
+  }
+});
+
+
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // use same secret used in link generation
+
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ message: "Invalid token or user not found" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password reset successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Reset token is invalid or has expired" });
+  }
+});
+
 
 // Get Routes
 //userdetail 

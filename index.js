@@ -21,7 +21,7 @@ app.get('/',(req,res)=>{
 app.use(userRoutes)
 
 //server Start:
-const PORT =8002
+const PORT =8000
 app.listen(PORT,()=>{
     console.log("Server Started at PORT",PORT)
 })
