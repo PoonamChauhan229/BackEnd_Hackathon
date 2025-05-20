@@ -2,12 +2,40 @@ const Product = require("../model/product");
 
 const getAllProducts = async (req, res) => {
   try {
-    const { page = 1 } = req.query;
+    const { page = 1, sort, search = "", category, type } = req.query;
     const limit = 12;
     const skip = (page - 1) * limit;
 
-    const total = await Product.countDocuments();
-    const products = await Product.find().skip(skip).limit(limit);
+    const query = {};
+
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (type) {
+      query.type = type;
+    }
+
+    // Sorting
+    let sortOption = {};
+    if (sort === "lowToHigh") {
+      sortOption.price = 1;
+    } else if (sort === "highToLow") {
+      sortOption.price = -1;
+    }
+
+    // Count total with filters
+    const total = await Product.countDocuments(query);
+
+    // Fetch paginated and sorted products
+    const products = await Product.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       total,
@@ -17,7 +45,7 @@ const getAllProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Failed to fetch products", error });
   }
 };

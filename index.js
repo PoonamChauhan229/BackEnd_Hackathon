@@ -15,6 +15,8 @@ const cors = require("cors");
 app.use(cors());
 
 app.use(express.json());
+app.use("/images", express.static("images"));
+
 app.get("/", (req, res) => {
   res.send("server running");
 });
