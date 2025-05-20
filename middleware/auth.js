@@ -3,33 +3,45 @@ const User = require("../model/user");
 
 const auth = async (req, res, next) => {
   console.log("Auth middleware is called");
-  console.log("text", req.header("Authorization"));
+  console.log("Authorization Header:", req.header("Authorization"));
+
   try {
-    if (!req.header("Authorization")) {
-      return res.send({ message: "Authorization Header is Missing" });
+    const authHeader = req.header("Authorization");
+    if (!authHeader) {
+      return res
+        .status(401)
+        .json({ message: "Authorization Header is Missing" });
     }
-    const token = req.header("Authorization").replace("Bearer ", "");
-    const decode = jwt.verify(token, "nodejs");
+
+    const parts = authHeader.split(" ");
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      return res.status(401).json({ message: "Invalid Authorization Format" });
+    }
+
+    const token = parts[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY); // ✅ match signing secret
+
     req.token = token;
-    const user = await User.findOne({ _id: decode._id });
-    req.user = user;
+    const user = await User.findById(decoded._id);
+
     if (!user) {
-      res.send({ user, message: "User Not Found" });
+      return res.status(404).json({ message: "User Not Found" });
     }
+
+    req.user = user;
     next();
   } catch (e) {
-    res.send({ message: "Authentication Error" });
+    console.error("Auth Error:", e.message);
+    return res.status(401).json({ message: "Authentication Error" });
   }
 };
 
 const conditionalAuth = (req, res, next) => {
-  if (req.header("Authorization")) {
-    // if Authorazation is there,call auth
+  const authHeader = req.header("Authorization");
+  if (authHeader) {
     return auth(req, res, next);
-  } else {
-    // if missing pls go to next
-    return next();
   }
+  return next();
 };
 
 module.exports = { auth, conditionalAuth };

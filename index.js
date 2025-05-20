@@ -6,6 +6,8 @@ const connectToDB = require("./db/connection");
 const userRoutes = require("./routes/user");
 const cartRoutes = require("./routes/cart");
 const productRoutes = require("./routes/product");
+const reviewRoutes = require("./routes/review");
+const wishlistRoutes = require("./routes/wishlist");
 
 connectToDB();
 
@@ -14,12 +16,14 @@ app.use(cors());
 
 app.use(express.json());
 app.get("/", (req, res) => {
-  res.send("Welcome to MovieStation");
+  res.send("server running");
 });
 
 app.use("/api/auth", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/product", productRoutes);
+app.use("/api/review", reviewRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 //server Start:
 const PORT = 8000;

@@ -8,11 +8,7 @@ async function seedDatabase() {
       console.log("Database is already seeded");
       return;
     }
-    console.log("Seeding products", products);
-
-    // Seed products with Date objects
     await Product.insertMany(products);
-    console.log("Seeded products");
 
     console.log("Database seeding completed");
   } catch (error) {
