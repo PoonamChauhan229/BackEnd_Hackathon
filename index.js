@@ -5,6 +5,7 @@ dotenv.config();
 const connectToDB = require("./db/connection");
 const userRoutes = require("./routes/user");
 const cartRoutes = require("./routes/cart");
+const productRoutes = require("./routes/product");
 
 connectToDB();
 
@@ -16,8 +17,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to MovieStation");
 });
 
-app.use(userRoutes);
-app.use(cartRoutes);
+app.use("/api/auth", userRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/product", productRoutes);
 
 //server Start:
 const PORT = 8000;
