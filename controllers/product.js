@@ -2,7 +2,7 @@ const Product = require("../model/product");
 
 const getAllProducts = async (req, res) => {
   try {
-    const { page = 1, sort, search = "", category, type } = req.query;
+    const { page = 1, sort, search = "", category, subCategory } = req.query;
     const limit = 12;
     const skip = (page - 1) * limit;
 
@@ -16,8 +16,8 @@ const getAllProducts = async (req, res) => {
       query.category = category;
     }
 
-    if (type) {
-      query.type = type;
+    if (subCategory) {
+      query.subCategory = type;
     }
 
     // Sorting
